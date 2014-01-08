@@ -17,60 +17,48 @@
 
 package org.pentaho.platform.scheduler2.recur;
 
-import javax.xml.bind.annotation.XmlRootElement;
-
 import org.pentaho.platform.api.scheduler2.recur.ITimeRecurrence;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 @XmlRootElement
-public class QualifiedDayOfMonth implements ITimeRecurrence {
-  private boolean last;
-  private boolean weekday;
-  private Integer day;
+public class QualifiedMonth implements ITimeRecurrence {
 
-  public QualifiedDayOfMonth() {
+  public enum MonthName {
+    JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG, SEP, OCT, NOV, DEC;
+
+    public static MonthName fromString( String string ) {
+      try {
+        return MonthName.valueOf( string );
+      } catch ( IllegalArgumentException e ) {
+        return null;
+      }
+    }
   }
 
-  public QualifiedDayOfMonth( boolean last, boolean weekday, Integer day ) {
-    this.last = last;
-    this.weekday = weekday;
-    this.day = day;
+  private MonthName monthName;
+
+  public QualifiedMonth() {
   }
 
-  public boolean isLast() {
-    return last;
+  public QualifiedMonth( MonthName monthName ) {
+    this.monthName = monthName;
   }
 
-  public void setLast( boolean last ) {
-    this.last = last;
+  public QualifiedMonth( int monthNumber ) {
+    monthName = MonthName.values()[monthNumber];
   }
 
-  public boolean isWeekday() {
-    return weekday;
+  public MonthName getMonthName() {
+    return monthName;
   }
 
-  public void setWeekday( boolean weekday ) {
-    this.weekday = weekday;
+  public void setMonthName( MonthName monthName ) {
+    this.monthName = monthName;
   }
 
-  public Integer getDay() {
-    return day;
-  }
-
-  public void setDay( Integer day ) {
-    this.day = day;
-  }
-
+  @Override
   public String toString() {
-    String result = ""; //$NON-NLS-1$
-    if ( day != null ) {
-      result += day;
-    }
-    if ( last ) {
-      result += "L"; //$NON-NLS-1$
-    }
-    if ( weekday ) {
-      result += "W"; //$NON-NLS-1$
-    }
-    return result;
+    return String.valueOf( monthName.ordinal() + 1 );
   }
 }
