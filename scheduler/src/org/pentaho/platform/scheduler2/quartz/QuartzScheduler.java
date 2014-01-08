@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
@@ -57,6 +58,7 @@ import org.pentaho.platform.scheduler2.recur.QualifiedDayOfMonth;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeekQualifier;
+import org.pentaho.platform.scheduler2.recur.QualifiedMonth.MonthName;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
 import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
 import org.quartz.Calendar;
@@ -100,15 +102,15 @@ public class QuartzScheduler implements IScheduler {
 
   private static final Pattern listPattern = Pattern.compile( "\\d+" ); //$NON-NLS-1$
 
-  private static final Pattern dayOfWeekRangePattern = Pattern.compile( ".*\\-.*" ); //$NON-NLS-1$
+  private static final Pattern stringRangePattern = Pattern.compile( ".*\\-.*" ); //$NON-NLS-1$
 
   private static final Pattern sequencePattern = Pattern.compile( "\\d+\\-\\d+" ); //$NON-NLS-1$
 
-  private static final Pattern intervalPattern = Pattern.compile( "\\d+/\\d+" ); //$NON-NLS-1$
+  private static final Pattern intervalPattern = Pattern.compile( "\\d*/\\d+" ); //$NON-NLS-1$
 
   private static final Pattern qualifiedDayPattern = Pattern.compile( "\\d+#\\d+" ); //$NON-NLS-1$
 
-  private static final Pattern lastDayPattern = Pattern.compile( "\\d+L" ); //$NON-NLS-1$
+  private static final Pattern dayOfMonthPattern = Pattern.compile( "LW|\\d*L|\\d+W" ); //$NON-NLS-1$
 
   public QuartzScheduler( SchedulerFactory schedulerFactory ) {
     this.quartzSchedulerFactory = schedulerFactory;
@@ -623,145 +625,205 @@ public class QuartzScheduler implements IScheduler {
     complexJobTrigger.setMinuteRecurrence( (ITimeRecurrence) null );
     complexJobTrigger.setSecondRecurrence( (ITimeRecurrence) null );
 
-    for ( ITimeRecurrence recurrence : parseRecurrence( cronExpression, 6 ) ) {
-      complexJobTrigger.addYearlyRecurrence( recurrence );
-    }
-    for ( ITimeRecurrence recurrence : parseRecurrence( cronExpression, 4 ) ) {
-      complexJobTrigger.addMonthlyRecurrence( recurrence );
-    }
-    List<ITimeRecurrence> dayOfWeekRecurrences = parseDayOfWeekRecurrences( cronExpression );
-    List<ITimeRecurrence> dayOfMonthRecurrences = parseRecurrence( cronExpression, 3 );
-    if ( ( dayOfWeekRecurrences.size() > 0 ) && ( dayOfMonthRecurrences.size() == 0 ) ) {
-      for ( ITimeRecurrence recurrence : dayOfWeekRecurrences ) {
-        complexJobTrigger.addDayOfWeekRecurrence( recurrence );
+    String delims = "[ ]+"; //$NON-NLS-1$
+    String[] tokens = cronExpression.split( delims );
+
+    if ( tokens.length < 6 ) {
+      throw new IllegalArgumentException( Messages.getInstance().getErrorString(
+          "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
+    } else {
+      for ( ITimeRecurrence recurrence : parseRecurrence( tokens[0] ) ) {
+        complexJobTrigger.addSecondRecurrence( recurrence );
       }
-    } else if ( ( dayOfWeekRecurrences.size() == 0 ) && ( dayOfMonthRecurrences.size() > 0 ) ) {
-      for ( ITimeRecurrence recurrence : dayOfMonthRecurrences ) {
-        complexJobTrigger.addDayOfMonthRecurrence( recurrence );
+      for ( ITimeRecurrence recurrence : parseRecurrence( tokens[1] ) ) {
+        complexJobTrigger.addMinuteRecurrence( recurrence );
+      }
+      for ( ITimeRecurrence recurrence : parseRecurrence( tokens[2] ) ) {
+        complexJobTrigger.addHourlyRecurrence( recurrence );
+      }
+      for ( ITimeRecurrence recurrence : parseMonthRecurrences( tokens[4] ) ) {
+        complexJobTrigger.addMonthlyRecurrence( recurrence );
+      }
+
+      List<ITimeRecurrence> dayOfMonthRecurrences = parseDayOfMonthRecurrences( tokens[3] );
+      List<ITimeRecurrence> dayOfWeekRecurrences = parseDayOfWeekRecurrences( tokens[5] );
+      if ( ( dayOfWeekRecurrences.size() > 0 ) && ( dayOfMonthRecurrences.size() == 0 ) ) {
+        for ( ITimeRecurrence recurrence : dayOfWeekRecurrences ) {
+          complexJobTrigger.addDayOfWeekRecurrence( recurrence );
+        }
+      } else if ( ( dayOfWeekRecurrences.size() == 0 ) && ( dayOfMonthRecurrences.size() > 0 ) ) {
+        for ( ITimeRecurrence recurrence : dayOfMonthRecurrences ) {
+          complexJobTrigger.addDayOfMonthRecurrence( recurrence );
+        }
+      } else if ( ( dayOfWeekRecurrences.size() > 0 ) && ( dayOfMonthRecurrences.size() > 0 ) ) {
+        throw new IllegalArgumentException( Messages.getInstance().getErrorString(
+            "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
+      }
+
+      if ( tokens.length >= 7 ) {
+        for ( ITimeRecurrence recurrence : parseRecurrence( tokens[6] ) ) {
+          complexJobTrigger.addYearlyRecurrence( recurrence );
+        }
       }
     }
-    for ( ITimeRecurrence recurrence : parseRecurrence( cronExpression, 2 ) ) {
-      complexJobTrigger.addHourlyRecurrence( recurrence );
-    }
-    for ( ITimeRecurrence recurrence : parseRecurrence( cronExpression, 1 ) ) {
-      complexJobTrigger.addMinuteRecurrence( recurrence );
-    }
-    for ( ITimeRecurrence recurrence : parseRecurrence( cronExpression, 0 ) ) {
-      complexJobTrigger.addSecondRecurrence( recurrence );
-    }
+
     return complexJobTrigger;
   }
 
-  private static List<ITimeRecurrence> parseDayOfWeekRecurrences( String cronExpression ) {
-    List<ITimeRecurrence> dayOfWeekRecurrence = new ArrayList<ITimeRecurrence>();
-    String delims = "[ ]+"; //$NON-NLS-1$
-    String[] tokens = cronExpression.split( delims );
-    if ( tokens.length >= 6 ) {
-      String dayOfWeekTokens = tokens[5];
-      tokens = dayOfWeekTokens.split( "," ); //$NON-NLS-1$
+  private static List<ITimeRecurrence> parseDayOfWeekRecurrences( String dayOfWeekToken ) {
+    List<ITimeRecurrence> dayOfWeekRecurrence = parseRecurrence( dayOfWeekToken, false );
+    if ( dayOfWeekRecurrence.isEmpty() ) {
+      String[] tokens = dayOfWeekToken.split( "," ); //$NON-NLS-1$
       if ( ( tokens.length > 1 ) || !( tokens[0].equals( "*" ) || tokens[0].equals( "?" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
         RecurrenceList dayOfWeekList = null;
         for ( String token : tokens ) {
-          if ( listPattern.matcher( token ).matches() ) {
+          if ( "L".equalsIgnoreCase( token ) ) {
             if ( dayOfWeekList == null ) {
               dayOfWeekList = new RecurrenceList();
             }
-            dayOfWeekList.getValues().add( Integer.parseInt( token ) );
+            dayOfWeekList.getValues().add( DayOfWeek.SAT.ordinal() );
           } else {
-            if ( dayOfWeekList != null ) {
-              dayOfWeekRecurrence.add( dayOfWeekList );
-              dayOfWeekList = null;
-            }
-            if ( sequencePattern.matcher( token ).matches() ) {
-              String[] days = token.split( "-" ); //$NON-NLS-1$
-              dayOfWeekRecurrence.add( new SequentialRecurrence( Integer.parseInt( days[0] ), Integer
-                  .parseInt( days[1] ) ) );
-            } else if ( intervalPattern.matcher( token ).matches() ) {
-              String[] days = token.split( "/" ); //$NON-NLS-1$
-              dayOfWeekRecurrence.add( new IncrementalRecurrence( Integer.parseInt( days[0] ), Integer
-                  .parseInt( days[1] ) ) );
-            } else if ( qualifiedDayPattern.matcher( token ).matches() ) {
+            if ( qualifiedDayPattern.matcher( token ).matches() ) {
               String[] days = token.split( "#" ); //$NON-NLS-1$
-              dayOfWeekRecurrence
-                  .add( new QualifiedDayOfWeek( Integer.parseInt( days[1] ), Integer.parseInt( days[0] ) ) );
-            } else if ( lastDayPattern.matcher( token ).matches() ) {
-              DayOfWeek dayOfWeek =
-                  DayOfWeek.values()[( Integer.parseInt( token.substring( 0, token.length() - 1 ) ) - 1 ) % 7];
+              dayOfWeekRecurrence.add( new QualifiedDayOfWeek( Integer.parseInt( days[1] ),
+                  Integer.parseInt( days[0] ) ) );
+            } else if ( token.endsWith( "L" ) ) { //$NON-NLS-2$
+              DayOfWeek dayOfWeek = DayOfWeek
+                  .values()[Integer.parseInt( token.substring( 0, token.length() - 1 ) ) - 1];
               dayOfWeekRecurrence.add( new QualifiedDayOfWeek( DayOfWeekQualifier.LAST, dayOfWeek ) );
-            } else if ( dayOfWeekRangePattern.matcher( token ).matches() ) {
+            } else if ( stringRangePattern.matcher( token ).matches() ) {
               String[] days = token.split( "-" ); //$NON-NLS-1$
-              int start = DayOfWeek.valueOf( days[0] ).ordinal();
-              int finish = DayOfWeek.valueOf( days[1] ).ordinal();
-              dayOfWeekRecurrence.add( new SequentialRecurrence( start, finish ) );
+              DayOfWeek fromString = DayOfWeek.fromString( days[0] );
+              DayOfWeek toString = DayOfWeek.fromString( days[1] );
+              if ( fromString != null && toString != null ) {
+                int start = fromString.ordinal() + 1;
+                int finish = toString.ordinal() + 1;
+                dayOfWeekRecurrence.add( new SequentialRecurrence( start, finish ) );
+              } else {
+                throw new IllegalArgumentException( Messages.getInstance().getErrorString(
+                    "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
+              }
+            } else if ( DayOfWeek.fromString( token ) != null ) {
+              if ( dayOfWeekList == null ) {
+                dayOfWeekList = new RecurrenceList();
+              }
+              dayOfWeekList.getValues().add( DayOfWeek.valueOf( token ).ordinal() + 1 );
             } else {
-              dayOfWeekList = new RecurrenceList();
-              dayOfWeekList.getValues().add( DayOfWeek.valueOf( token ).ordinal() );
-              dayOfWeekRecurrence.add( dayOfWeekList );
-              dayOfWeekList = null;
-              // } else {
-              // throw new IllegalArgumentException(Messages.getInstance().getErrorString(
-              //                  "ComplexJobTrigger.ERROR_0001_InvalidCronExpression")); //$NON-NLS-1$
+              throw new IllegalArgumentException( Messages.getInstance().getErrorString(
+                                "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
             }
           }
-
         }
         if ( dayOfWeekList != null ) {
           dayOfWeekRecurrence.add( dayOfWeekList );
         }
       }
-    } else {
-      throw new IllegalArgumentException( Messages.getInstance().getErrorString(
-          "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
     }
     return dayOfWeekRecurrence;
   }
 
-  private static List<ITimeRecurrence> parseRecurrence( String cronExpression, int tokenIndex ) {
-    List<ITimeRecurrence> timeRecurrence = new ArrayList<ITimeRecurrence>();
-    String delims = "[ ]+"; //$NON-NLS-1$
-    String[] tokens = cronExpression.split( delims );
-    if ( tokens.length > tokenIndex ) {
-      String timeTokens = tokens[tokenIndex];
-      tokens = timeTokens.split( "," ); //$NON-NLS-1$
+  private static List<ITimeRecurrence> parseDayOfMonthRecurrences( String dayOfMonthToken ) {
+    List<ITimeRecurrence> dayOfMonthRecurrence = parseRecurrence( dayOfMonthToken, false );
+    if ( dayOfMonthRecurrence.isEmpty() ) {
+      String[] tokens = dayOfMonthToken.split( "," ); //$NON-NLS-1$
       if ( ( tokens.length > 1 ) || !( tokens[0].equals( "*" ) || tokens[0].equals( "?" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
-        RecurrenceList timeList = null;
         for ( String token : tokens ) {
-          if ( listPattern.matcher( token ).matches() ) {
-            if ( timeList == null ) {
-              timeList = new RecurrenceList();
+          if ( dayOfMonthPattern.matcher( token ).matches() ) {
+            final Matcher matcher = listPattern.matcher( token );
+            Integer day = null;
+            if ( matcher.find() ) {
+              day = Integer.valueOf( matcher.group() );
             }
-            timeList.getValues().add( Integer.parseInt( token ) );
+            dayOfMonthRecurrence.add( new QualifiedDayOfMonth( token.contains( "L" ), token.contains( "W" ), day ) ); //$NON-NLS-1$ //$NON-NLS-1$
           } else {
-            if ( timeList != null ) {
-              timeRecurrence.add( timeList );
-              timeList = null;
-            }
-            if ( sequencePattern.matcher( token ).matches() ) {
-              String[] days = token.split( "-" ); //$NON-NLS-1$
-              timeRecurrence.add( new SequentialRecurrence( Integer.parseInt( days[0] ),
-                      Integer.parseInt( days[1] ) ) );
-            } else if ( intervalPattern.matcher( token ).matches() ) {
-              String[] days = token.split( "/" ); //$NON-NLS-1$
-              timeRecurrence
-                  .add( new IncrementalRecurrence( Integer.parseInt( days[0] ), Integer.parseInt( days[1] ) ) );
-            } else if ( "L".equalsIgnoreCase( token ) ) {
-              timeRecurrence.add( new QualifiedDayOfMonth() );
+            throw new IllegalArgumentException( Messages.getInstance().getErrorString(
+                              "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
+          }
+        }
+      }
+    }
+    return dayOfMonthRecurrence;
+  }
+
+  private static List<ITimeRecurrence> parseMonthRecurrences( String monthToken ) {
+    List<ITimeRecurrence> monthRecurrence = parseRecurrence( monthToken, false );
+    if ( monthRecurrence.isEmpty() ) {
+      String[] tokens = monthToken.split( "," ); //$NON-NLS-1$
+      if ( ( tokens.length > 1 ) || !( tokens[0].equals( "*" ) || tokens[0].equals( "?" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
+        RecurrenceList monthList = null;
+        for ( String token : tokens ) {
+          if ( stringRangePattern.matcher( token ).matches() ) {
+            String[] months = token.split( "-" ); //$NON-NLS-1$
+            final MonthName fromString = MonthName.fromString( months[0] );
+            final MonthName toString = MonthName.fromString( months[1] );
+            if ( fromString != null && toString != null ) {
+              int start = fromString.ordinal() + 1;
+              int finish = toString.ordinal() + 1;
+              monthRecurrence.add( new SequentialRecurrence( start, finish ) );
             } else {
               throw new IllegalArgumentException( Messages.getInstance().getErrorString(
                   "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
             }
+          } else if ( MonthName.fromString( token ) != null ) {
+            if ( monthList == null ) {
+              monthList = new RecurrenceList();
+            }
+            monthList.getValues().add( MonthName.valueOf( token ).ordinal() + 1 );
+          } else {
+            throw new IllegalArgumentException( Messages.getInstance().getErrorString(
+                              "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
           }
-
         }
-        if ( timeList != null ) {
-          timeRecurrence.add( timeList );
+        if ( monthList != null ) {
+          monthRecurrence.add( monthList );
         }
       }
-    } else {
-      throw new IllegalArgumentException( Messages.getInstance().getErrorString(
-          "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
     }
-    return timeRecurrence;
+    return monthRecurrence;
+  }
+
+  private static List<ITimeRecurrence> parseRecurrence( String token ) {
+    return parseRecurrence( token, true );
+  }
+
+  private static List<ITimeRecurrence> parseRecurrence( String token, boolean throwException ) {
+    final List<ITimeRecurrence> recurrences = new ArrayList<ITimeRecurrence>();
+    final String[] tokens = token.split( "," ); //$NON-NLS-1$
+    if ( ( tokens.length > 1 ) || !( tokens[0].equals( "*" ) || tokens[0].equals( "?" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
+      RecurrenceList tList = null;
+      for ( String t : tokens ) {
+        if ( listPattern.matcher( t ).matches() ) {
+          if ( tList == null ) {
+            tList = new RecurrenceList();
+          }
+          tList.getValues().add( Integer.parseInt( t ) );
+        } else {
+          if ( tList != null ) {
+            recurrences.add( tList );
+            tList = null;
+          }
+          if ( sequencePattern.matcher( t ).matches() ) {
+            String[] days = t.split( "-" ); //$NON-NLS-1$
+            recurrences.add( new SequentialRecurrence( Integer.parseInt( days[0] ),
+                Integer.parseInt( days[1] ) ) );
+          } else if ( intervalPattern.matcher( t ).matches() ) {
+            String[] days = t.split( "/" ); //$NON-NLS-1$
+            recurrences.add(
+                new IncrementalRecurrence( "".equals( days[0] ) ? 0 : Integer.parseInt( days[0] )
+                    , Integer.parseInt( days[1] ) )
+            );
+          } else if ( throwException ) {
+            throw new IllegalArgumentException( Messages.getInstance().getErrorString(
+                "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
+          }
+        }
+
+      }
+      if ( tList != null ) {
+        recurrences.add( tList );
+      }
+    }
+    return recurrences;
   }
 
   /** {@inheritDoc} */

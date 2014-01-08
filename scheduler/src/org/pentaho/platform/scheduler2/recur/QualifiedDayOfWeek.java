@@ -24,15 +24,23 @@ import org.pentaho.platform.api.scheduler2.recur.ITimeRecurrence;
 @XmlRootElement
 public class QualifiedDayOfWeek implements ITimeRecurrence {
   public enum DayOfWeek {
-    SUN, MON, TUE, WED, THU, FRI, SAT
-  };
+    SUN, MON, TUE, WED, THU, FRI, SAT;
+
+    public static DayOfWeek fromString( String string ) {
+      try {
+        return DayOfWeek.valueOf( string );
+      } catch ( IllegalArgumentException e ) {
+        return null;
+      }
+    }
+  }
 
   public enum DayOfWeekQualifier {
     FIRST, SECOND, THIRD, FOURTH, FIFTH, LAST
-  };
+  }
 
-  DayOfWeekQualifier qualifier;
-  DayOfWeek dayOfWeek;
+  private DayOfWeekQualifier qualifier;
+  private DayOfWeek dayOfWeek;
 
   public QualifiedDayOfWeek() {
   }
@@ -65,13 +73,17 @@ public class QualifiedDayOfWeek implements ITimeRecurrence {
 
   public String toString() {
     String aString = ""; //$NON-NLS-1$
-    if ( ( getQualifier() != null ) && ( getDayOfWeek() != null ) ) {
-      if ( getQualifier() == DayOfWeekQualifier.LAST ) {
-        aString = Integer.toString( dayOfWeek.ordinal() + 1 ) + "L"; //$NON-NLS-1$
-      } else {
-        aString = Integer.toString( dayOfWeek.ordinal() + 1 ) + "#" + ( qualifier.ordinal() + 1 ); //$NON-NLS-1$
+
+    if ( dayOfWeek != null ) {
+      aString += dayOfWeek;
+      if ( qualifier != null && qualifier != DayOfWeekQualifier.LAST ) {
+        aString += '#' + ( qualifier.ordinal() + 1 );
       }
     }
+    if ( qualifier == DayOfWeekQualifier.LAST ) {
+      aString += 'L';
+    }
+
     return aString;
   }
 }

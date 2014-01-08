@@ -27,7 +27,47 @@ public class QualifiedDayOfMonth implements ITimeRecurrence {
   public QualifiedDayOfMonth() {
   }
 
+  public QualifiedDayOfMonth( boolean last, boolean weekday, Integer day ) {
+    this.last = last;
+    this.weekday = weekday;
+    this.day = day;
+  }
+
+  public boolean isLast() {
+    return last;
+  }
+
+  public void setLast( boolean last ) {
+    this.last = last;
+  }
+
+  public boolean isWeekday() {
+    return weekday;
+  }
+
+  public void setWeekday( boolean weekday ) {
+    this.weekday = weekday;
+  }
+
+  public Integer getDay() {
+    return day;
+  }
+
+  public void setDay( Integer day ) {
+    this.day = day;
+  }
+
   public String toString() {
-    return "L"; //$NON-NLS-1$
+    String result = ""; //$NON-NLS-1$
+    if ( day != null ) {
+      result += day;
+    }
+    if ( last ) {
+      result += "L"; //$NON-NLS-1$
+    }
+    if ( weekday ) {
+      result += "W"; //$NON-NLS-1$
+    }
+    return result;
   }
 }

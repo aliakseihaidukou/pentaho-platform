@@ -21,12 +21,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
-import org.pentaho.platform.scheduler2.recur.IncrementalRecurrence;
-import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
+import org.pentaho.platform.scheduler2.recur.*;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeekQualifier;
-import org.pentaho.platform.scheduler2.recur.RecurrenceList;
-import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
 
 @SuppressWarnings( "nls" )
 public class ComplexTriggerTest {
@@ -515,5 +512,51 @@ public class ComplexTriggerTest {
     Assert.assertEquals( ( (RecurrenceList) trigger.getMinuteRecurrences().get( 0 ) ).getValues().get( 1 ),
         new Integer( 45 ) );
 
+    trigger = QuartzScheduler.createComplexTrigger( "* * * ? JAN * *" );
+    Assert.assertEquals( ( (RecurrenceList) trigger.getMonthlyRecurrences().get( 0 ) ).getValues().get( 0 ), new Integer( QualifiedMonth.MonthName.JAN.ordinal() + 1 ) );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * ? JAN,MAY,SEP * *" );
+    Assert.assertEquals( ( (RecurrenceList) trigger.getMonthlyRecurrences().get( 0 ) ).getValues().get( 0 ), new Integer( QualifiedMonth.MonthName.JAN.ordinal() + 1 ) );
+    Assert.assertEquals( ( (RecurrenceList) trigger.getMonthlyRecurrences().get( 0 ) ).getValues().get( 1 ), new Integer( QualifiedMonth.MonthName.MAY.ordinal() + 1 ) );
+    Assert.assertEquals( ( (RecurrenceList) trigger.getMonthlyRecurrences().get( 0 ) ).getValues().get( 2 ), new Integer( QualifiedMonth.MonthName.SEP.ordinal() + 1 ) );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * ? JAN-SEP * *" );
+    Assert.assertEquals( ( (SequentialRecurrence) trigger.getMonthlyRecurrences().get( 0 ) ).getFirstValue(), new Integer( QualifiedMonth.MonthName.JAN.ordinal() + 1 ) );
+    Assert.assertEquals( ( (SequentialRecurrence) trigger.getMonthlyRecurrences().get( 0 ) ).getLastValue(), new Integer( QualifiedMonth.MonthName.SEP.ordinal() + 1 ) );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * ? * MON *" );
+    Assert.assertEquals( ( (RecurrenceList) trigger.getDayOfWeekRecurrences().get( 0 ) ).getValues().get( 0 ), new Integer( DayOfWeek.MON.ordinal() + 1 ) );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * ? * MON,FRI *" );
+    Assert.assertEquals( ( (RecurrenceList) trigger.getDayOfWeekRecurrences().get( 0 ) ).getValues().get( 0 ), new Integer( DayOfWeek.MON.ordinal() + 1 ) );
+    Assert.assertEquals( ( (RecurrenceList) trigger.getDayOfWeekRecurrences().get( 0 ) ).getValues().get( 1 ), new Integer( DayOfWeek.FRI.ordinal() + 1 ) );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * ? * MON-FRI *" );
+    Assert.assertEquals( ( (SequentialRecurrence) trigger.getDayOfWeekRecurrences().get( 0 ) ).getFirstValue(), new Integer( DayOfWeek.MON.ordinal() + 1 ) );
+    Assert.assertEquals( ( (SequentialRecurrence) trigger.getDayOfWeekRecurrences().get( 0 ) ).getLastValue(), new Integer( DayOfWeek.FRI.ordinal() + 1 ) );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * 10W * ? *" );
+    Assert.assertEquals( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).getDay(), new Integer( 10 ) );
+    Assert.assertFalse( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).isLast() );
+    Assert.assertTrue( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).isWeekday() );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * 5L * ? *" );
+    Assert.assertEquals( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).getDay(), new Integer( 5 ) );
+    Assert.assertTrue( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).isLast() );
+    Assert.assertFalse( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).isWeekday() );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * L * ? *" );
+    Assert.assertNull( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).getDay() );
+    Assert.assertTrue( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).isLast() );
+    Assert.assertFalse( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).isWeekday() );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* * * LW * ? *" );
+    Assert.assertNull( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).getDay() );
+    Assert.assertTrue( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).isLast() );
+    Assert.assertTrue( ( (QualifiedDayOfMonth) trigger.getDayOfMonthRecurrences().get( 0 ) ).isWeekday() );
+
+    trigger = QuartzScheduler.createComplexTrigger( "* /10 * ? * * *" );
+    Assert.assertEquals( ( (IncrementalRecurrence) trigger.getMinuteRecurrences().get( 0 ) ).getStartingValue(), new Integer( 0 ) );
+    Assert.assertEquals( ( (IncrementalRecurrence) trigger.getMinuteRecurrences().get( 0 ) ).getIncrement(), new Integer( 10 ) );
   }
 }
