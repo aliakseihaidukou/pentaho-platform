@@ -41,6 +41,21 @@ public class PasswordResource {
     "<html><body><form method='post'><input type=\"password\" name=\"password\"/>"
       + "<input type=\"submit\" value=\"Submit\"/></form><br/>%s</body></html>";
 
+  /**
+   * Returns encrypted password within a {@link PasswordResource#FORM_HTML}.
+   *
+   * <p>
+   *   Endpoint address is <b>http://[host]:[port]/[webapp]/api/password/encrypt</b><br/>
+   *   Use POST request type.<br/>
+   *   You should be logged in to the system and have <b>{@value AdministerSecurityAction#NAME}</b> action
+   *   in order to use the method.<br/>
+   *   It is used from browser - get the {@link PasswordResource#FORM_HTML} by endpoint address GET request
+   *   and send the password with POST.
+   * </p>
+   *
+   * @param password password for encryption
+   * @return encrypted password within a {@link PasswordResource#FORM_HTML}
+   */
   @POST
   @Path( "/encrypt" )
   @Produces( MediaType.TEXT_HTML )
@@ -55,6 +70,20 @@ public class PasswordResource {
     return Response.status( UNAUTHORIZED ).build();
   }
 
+  /**
+   * Returns empty {@link PasswordResource#FORM_HTML}.
+   *
+   * <p>
+   *   Endpoint address is <b>http://[host]:[port]/[webapp]/api/password/encrypt</b><br/>
+   *   Use GET request type.<br/>
+   *   You should be logged in to the system and have <b>{@value AdministerSecurityAction#NAME}</b> action
+   *   in order to use the method.<br/>
+   *   It is used from browser - get the {@link PasswordResource#FORM_HTML} by endpoint address GET request
+   *   and send the password with POST.
+   * </p>
+   *
+   * @return empty {@link PasswordResource#FORM_HTML}
+   */
   @GET
   @Path( "/encrypt" )
   @Produces( MediaType.TEXT_HTML )

@@ -51,7 +51,73 @@ public class UserSettingsResource extends AbstractJaxRSResource {
 
   /**
    * Retrieve the global settings and the user settings for the current user
-   * 
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/user-settings/list</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is json or xml based on request "accept" header(
+   *  '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}' or
+   *  '{@value javax.ws.rs.core.MediaType#APPLICATION_XML}').<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <pre> Response examples:
+   * <b>JSON:</b>
+   * {@code {
+   *    "setting": [
+   *      {
+   *        "name": "recent",
+   *        "value": "[{\"fullPath\":\"/home/admin/1.prpti\", \"title\":\"1\", \"lastUse\":1404908321055}]"
+   *      },
+   *      {
+   *        "name": "MANTLE_SHOW_NAVIGATOR",
+   *        "value": "false"
+   *      }
+   *    ]
+   *  }
+   * }
+   *
+   * <b>XML:</b>
+   * {@code <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+   *   <settings>
+   *     <setting>
+   *       <name>recent</name>
+   *       <value>[{&quot;fullPath&quot;:&quot;/home/admin/1.prpti&quot;, &quot;title&quot;:&quot;1&quot;, &quot;lastUse&quot;:1404908321055}]</value>
+   *     </setting>
+   *     <setting>
+   *       <name>MANTLE_SHOW_NAVIGATOR</name>
+   *       <value>false</value>
+   *     </setting>
+   *   </settings>
+   * }
+   *
+   * Snippet using Jersey:
+   * {@code
+   *
+   * ...
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.GenericType;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * import org.pentaho.platform.web.http.api.resources.Setting;
+   *
+   * import java.util.List;
+   *
+   * ...
+   *
+   * public void test() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig(  ) );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[name]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/user-settings/list" );
+   *  List<Setting> settings = resource.get( new GenericType<List<Setting>>() {} );
+   *  for ( Setting setting : settings ) {
+   *    // use the settings
+   *  }
+   * }
+   * }
+   * </pre>
    * @return list of settings for the platform
    */
   @GET
@@ -75,11 +141,61 @@ public class UserSettingsResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Retrieve a particular user setting for the current user
-   * 
+   * Retrieve a particular user setting for the current user<br/>
+   * TODO: UserSettingService#getUserSetting(java.lang.String, java.lang.String) checks for
+   * PentahoSessionHolder.getSession().getAttribute("SPRING_SECURITY_CONTEXT") which is not defined at the first
+   * request, but the user's authentication data presents in SecurityContextHolder.getContext(). Maybe we need to rewrite
+   * the code.BTW "SPRING_SECURITY_CONTEXT" isn't checked in setUserSetting.
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/user-settings/[setting]</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is {@code 'text/plain'}, is is value of the setting or empty if this setting doesn't exist
+   *  for current user.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   * {@code
+   *
+   *  public void test() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig(  ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[name]", "[password]" ) );
+   *    //store cookies for authorization(keep the session)
+   *    client.addFilter( new ClientFilter() {
+   *      private List<Object> cookies;
+   *      @Override
+   *      public ClientResponse handle( ClientRequest request ) throws ClientHandlerException {
+   *        if ( cookies != null ) {
+   *          request.getHeaders().put( "Cookie", cookies );
+   *        }
+   *        ClientResponse response = getNext().handle( request );
+   *        // copy cookies
+   *        if ( response.getCookies() != null ) {
+   *          if ( cookies == null ) {
+   *            cookies = new ArrayList<Object>();
+   *          }
+   *          // A simple addAll just for illustration (should probably check for duplicates and expired cookies)
+   *          cookies.addAll( response.getCookies() );
+   *        }
+   *        return response;
+   *      }
+   *    } );
+   *    final WebResource resource = client.resource( baseUrl + "api/user-settings/[setting]" );
+   *    //first request for authorization
+   *    resource.get( String.class );
+   *    String setting = resource.get( String.class );
+   *    // use the setting
+   *  }
+   *     }
+   * </pre>
+   * </p>
+   *
    * @param setting (Name of the setting)
    * 
-   * @return value of the setting for the user
+   * @return value of the setting for the user or empty response
    */
   @GET
   @Path( "{setting : .+}" )
@@ -91,11 +207,34 @@ public class UserSettingsResource extends AbstractJaxRSResource {
 
   /**
    * Save the value of a particular setting for the current user
-   * 
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/user-settings/[setting]</b><br/>
+   *  Use POST request type.<br/>
+   *  Response content is {@code 'text/plain'}, is is value of the settingValue.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * public void testSetUserSetting() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig(  ) );
+   *  client.addFilter( new HTTPBasicAuthFilter( "admin", "password" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/user-settings/[setting]" );
+   *  resource.post( "[value]" );
+   *  // the setting is set
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
    * @param setting  (Setting name)
    * @param settingValue   (Value of the setting)
    * 
-   * @return 
+   * @return settingValue
    */
   @POST
   @Path( "{setting : .+}" )

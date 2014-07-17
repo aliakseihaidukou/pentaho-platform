@@ -66,7 +66,34 @@ public class UserConsoleResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Returns whether the current user is an administrator
+   * <p>Returns whether the current user is an administrator</p>
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/mantle/isAdministrator</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is 'true' or 'false'.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testIsAdministrator() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/mantle/isAdministrator" );
+   *  final Boolean isAdministrator = Boolean.valueOf( resource.get( String.class ) );
+   * }
+   * }
+   * </pre>
+   * </p>
    * 
    * @return "true" or "false"
    */
@@ -77,8 +104,39 @@ public class UserConsoleResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Returns whether the user is authenticated or not
-   * 
+   * //TODO: this method works ONLY for Authenticated users. Need to add
+   * //TODO: "\A/api/mantle/isAuthenticated\Z=Anonymous,Authenticated"
+   * //TODO: to package-res/biserver/pentaho-solutions/system/applicationContext-spring-security.xml
+   *
+   * <p>Returns whether the user is authenticated or not</p>
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/mantle/isAuthenticated</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is 'true' or 'false'.<br/>
+   *  TODO: You should NOT be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testIsAuthenticated() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/mantle/isAuthenticated" );
+   *  final Boolean isAuthenticated = Boolean.valueOf( resource.get( String.class ) );
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
    * @return "true" or "false"
    */
   @GET
@@ -88,8 +146,70 @@ public class UserConsoleResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Returns the list of admin related settings 
-   * 
+   * Returns the list of admin related settings
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/mantle/getAdminContent</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is json or xml based on request "accept" header(
+   *  '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}' or
+   *  '{@value javax.ws.rs.core.MediaType#APPLICATION_XML}').<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Response example:
+   * <pre>
+   *   <b>JSON:</b>
+   *   {@code
+   *
+   * {
+   *  "setting": [
+   *    {
+   *      "name": "...",
+   *      "value": "..."
+   *    },
+   *    ...
+   *  ]
+   * }
+   *  }
+   *  <b>XML:</b>
+   *  {@code
+   *
+   * <settings>
+   *  <setting>
+   *    <name>...</name>
+   *    <value>
+   *      ...
+   *    </value>
+   *  </setting>
+   *  ...
+   * </settings>
+   *  }
+   * </pre>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * import com.sun.jersey.api.client.GenericType;
+   * import java.util.List;
+   * ...
+   * public void testGetAdminContent() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/mantle/getAdminContent" );
+   *  final List<Setting> adminSettings = resource.get( new GenericType<List<Setting>>() {} );
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
    * @return list of settings
    */
   @GET
@@ -230,7 +350,41 @@ public class UserConsoleResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Apply the selected locale to the user console
+   * <p>Apply the selected locale to the user console</p>
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/mantle/locale</b><br/>
+   *  Use POST request type.<br/>
+   *  Response content is 'text/plain' new locale.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Response example:
+   * <pre>
+   *   en_US
+   * </pre>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testGetLocale() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/mantle/locale" );
+   *  final String locale = resource.post( String.class, "en" );
+   *  //the locale is set
+   * }
+   * }
+   * </pre>
+   * </p>
    * 
    * @param locale (user console's locale) 
    * 
@@ -250,6 +404,40 @@ public class UserConsoleResource extends AbstractJaxRSResource {
 
   /**
    * Return the server side locale
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/mantle/locale</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is 'text/plain' current locale.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Response example:
+   * <pre>
+   *   en_US
+   * </pre>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testGetLocale() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/mantle/locale" );
+   *  final String locale = resource.get( String.class );
+   *  //use the locale
+   * }
+   * }
+   * </pre>
+   * </p>
    * 
    * @return server's locale
    */
@@ -259,6 +447,42 @@ public class UserConsoleResource extends AbstractJaxRSResource {
     return Response.ok( LocaleHelper.getLocale().toString() ).build();
   }
 
+  /**
+   * <p>Store variable in session as attribute</p>
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/mantle/session-variable?key=[key]&value=[variable]</b><br/>
+   *  Use POST request type.<br/>
+   *  Response content is 'text/plain' stored variable.<br/>
+   *  If there was other variable stored in the session with this key, it will be lost.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testSetSessionVariable() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/mantle/session-variable?key=[key]&value=[variable]" );
+   *  final String variable = resource.post( String.class );
+   *  // the variable is stored in session
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
+   * @param key key
+   * @param value variable
+   * @return stored variable
+   */
   @POST
   @Path( "/session-variable" )
   public Response setSessionVariable( @QueryParam( "key" ) String key, @QueryParam( "value" ) String value ) {
@@ -267,12 +491,80 @@ public class UserConsoleResource extends AbstractJaxRSResource {
     return Response.ok( session.getAttribute( key ) ).build();
   }
 
+  /**
+   * <p>Return variable from session by key</p>
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/mantle/session-variable?key=[key]</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is 'text/plain' stored variable.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testGetSessionVariable() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/mantle/session-variable?key=[key]" );
+   *  final String variable = resource.get( String.class );
+   *  // use the variable
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
+   * @param key key
+   * @return variable from active session
+   */
   @GET
   @Path( "/session-variable" )
   public Response getSessionVariable( @QueryParam( "key" ) String key ) {
     return Response.ok( getPentahoSession().getAttribute( key ) ).build();
   }
-  
+
+  /**
+   * <p>Removes variable from current session</p>
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/mantle/session-variable?key=[key]</b><br/>
+   *  Use DELETE request type.<br/>
+   *  Response content is 'text/plain' removed variable.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testDeleteSessionVariable() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/mantle/session-variable?key=[key]" );
+   *  final String variable = resource.delete( String.class );
+   *  // use the removed variable
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
+   * @param key key
+   * @return removed variable
+   */
   @DELETE
   @Path( "/session-variable" )
   public Response clearSessionVariable( @QueryParam( "key" ) String key ) {

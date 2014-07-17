@@ -53,7 +53,71 @@ public class ThemeResource extends AbstractJaxRSResource {
 
   /**
    * List the current supported themes in the platform
-   * 
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/theme/list</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is json or xml based on request "accept" header(
+   *  '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}' or
+   *  '{@value javax.ws.rs.core.MediaType#APPLICATION_XML}').<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Response example:
+   * <pre>
+   *   <b>JSON:</b>
+   *   {@code
+   *
+   * {
+   *  "theme": [
+   *    {
+   *      "id": "onyx",
+   *      "name": "Onyx"
+   *    },
+   *    ...
+   *  ]
+   * }
+   *  }
+   *  <b>XML:</b>
+   *  {@code
+   *
+   *  <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+   *  <themes>
+   *    <theme>
+   *      <id>onyx</id>
+   *      <name>Onyx</name>
+   *    </theme>
+   *    ...
+   *  </themes>
+   *  }
+   * </pre>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.GenericType;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * import org.pentaho.platform.web.http.api.resources.Theme;
+   * ...
+   * public void testGetSystemThemes() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/theme/list" );
+   *  final List<Theme> themes = resource.get( new GenericType<List<Theme>>() { } );
+   *  for ( Theme theme : themes ) {
+   *    // use the theme
+   *  }
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
    * @return list of themes
    */
   @GET
@@ -73,12 +137,40 @@ public class ThemeResource extends AbstractJaxRSResource {
   }
 
   /**
+   * TODO: deny setting theme that doesn't present in the system - UI may be broken
    * Set the current theme to the one provided in this request
-   * 
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/theme/set</b><br/>
+   *  Use POST request type. Theme id is sent as raw text.<br/>
+   *  Response content is 'text/plain' new active theme id.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testSetTheme() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/theme/set" );
+   *  final String newTheme = resource.post( String.class, "[id]" );
+   *  // new theme is set
+   * }
+   * }
+   * </pre>
+   * </p>
    * 
    * @param theme (theme to be changed to)
    * 
-   * @return
+   * @return new active theme
    */
   @POST
   @Path( "/set" )
@@ -92,7 +184,40 @@ public class ThemeResource extends AbstractJaxRSResource {
   }
 
   /**
+   * //TODO: using the snippet you will always get 'default-theme'. That is caused by login system('pentaho-user-theme'
+   * //TODO: isn't set to session yet). Maybe this need to be changed.
+   * //TODO: To get correct value, user need to be in active session(store cookies from previous response, see
+   * //TODO: org.pentaho.platform.web.http.api.resources.UserSettingsResource#getUserSetting(java.lang.String))
+   *
    * Return the name of the active theme
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/theme/active</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is 'text/plain' active theme id.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testGetActiveTheme() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/theme/active" );
+   *  final String theme = resource.get( String.class );
+   *  // use the theme
+   * }
+   * }
+   * </pre>
+   * </p>
    * 
    * @return active theme
    */

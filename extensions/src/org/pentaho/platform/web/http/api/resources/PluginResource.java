@@ -129,18 +129,37 @@ public class PluginResource {
 
   /**
    * Retrieve the file from the selected plugin. This file is a static file (i.e javascript, html, css etc)
-   * 
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/plugins/[pluginId]/files/[path]</b><br/>
+   *  Use GET request type.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   *  "PluginFileResource.UNDETERMINED_MIME_TYPE" warning is written to log if mime type wasn't found for the file
+   * </p>
+   *
    * @param pluginId (Plugin ID of the selected Plugin)
    * @param path (Path of the file being retrieved. This is a colon separated path to the plugin file. This
    *        is usually a static file like a javascript, image or html 
-   * @return 
-   * @throws IOException
+   * @return
+   *  <ul>
+   *    <li>
+   *      a stream if plugin and file exist
+   *    </li>
+   *    <li>
+   *      {@link javax.ws.rs.core.Response.Status#NOT_FOUND} if plugin or file not found
+   *    </li>
+   *    <li>
+   *      {@link javax.ws.rs.core.Response.Status#FORBIDDEN} if the file is not in {@code <static-paths>} node
+   *      of related plugin.xml
+   *    </li>
+   *  </ul>
+   * @throws IOException when something wrong with copying the file for caching
    */
   @GET
   @Path( "/files/{path : .+}" )
   @Produces( WILDCARD )
   public Response readFile( @PathParam( "pluginId" ) String pluginId, @PathParam( "path" ) String path )
-    throws IOException {
+      throws IOException {
     List<String> pluginRestPerspectives = pluginManager.getPluginRESTPerspectivesForId( pluginId );
     boolean useCache = "true".equals( pluginManager.getPluginSetting( pluginId, "settings/cache", "false" ) ); //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
     String maxAge = (String) pluginManager.getPluginSetting( pluginId, "settings/max-age", null ); //$NON-NLS-1$

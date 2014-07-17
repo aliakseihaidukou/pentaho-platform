@@ -44,7 +44,41 @@ public class VersionResource extends AbstractJaxRSResource {
   protected static final Log logger = LogFactory.getLog( VersionResource.class );
 
   /**
-   * Returns the current version of the platform
+   * <p>Returns the current version number of the platform</p>
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/version/show</b><br/>
+   *  Use GET request type.<br/>
+   *  Response content is 'text/plain' pentaho-platform version number.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Response example:
+   * <pre>
+   *   5.2.0.0.7
+   * </pre>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testGetLocale() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/version/show" );
+   *  final String version = resource.get( String.class );
+   *  // use the version number
+   * }
+   * }
+   * </pre>
+   * </p>
    * 
    * @return platform's version
    */
@@ -57,8 +91,12 @@ public class VersionResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Return software update document to the user
-   * 
+   * <p>Return software update document to the user</p>
+   *
+   * pentaho-versionchecker-[versionNumber].jar
+   *
+   * possible errors - URIException and HttpException
+   *
    * @return software update document
    */
   @GET

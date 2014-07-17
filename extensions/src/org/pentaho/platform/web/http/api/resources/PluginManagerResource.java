@@ -53,9 +53,61 @@ public class PluginManagerResource {
 
   /**
    * Retrieve the list of XUL overlays for the provided id
-   * 
-   * @param id
-   * @return list of <code> Overlay </code>
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/plugin-manager/overlays?id=[id]</b><br/>
+   *  Use GET request type. Only '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}' value is valid
+   *  for "Accept" header.<br/>
+   *  Response content is '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}', is is array of overlays for [id]
+   *  parameter or all available overlays if the parameter is empty.<br/>
+   *  You should be logged in to the system in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Response example:
+   * <pre>
+   *   {@code
+   *
+   * {
+   *  "overlay": [
+   *    {
+   *      "id": "dataaccess",
+   *      "priority": "9999",
+   *      "resourceBundleUri": "api/repos/data-access/resources/messages/messages",
+   *      "source": "<overlay id=\"dataaccess\" resourcebundle=\"api/repos/data-access/resources/messages/messages\" loadatstart=\"false\">\n\t\t\t<menubar id=\"filemenu\">\n\t\t\t    <menuitem id=\"manageDatasourceItem\" insertafter=\"openMenuItem\" label=\"${manageDatasourceEllipsis}\" js-command=\"window.top.pho.showDatasourceManageDialog(window.top.datasourceEditorCallback)\"/>\n\t\t\t</menubar>\n\t\t\t<menubar id=\"newmenu\">\n\t\t\t\t<menuitem id=\"newDatasourceItem\" label=\"${newDatasourceEllipsis}\" js-command=\"window.top.pho.openDatasourceEditor(window.top.datasourceEditorCallback)\"/>\t\t\t\t\n\t\t\t</menubar>\n\t    </overlay>"
+   *    }
+   *  ]
+   * }
+   *  }
+   * </pre>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.GenericType;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * import org.pentaho.platform.web.http.api.resources.Overlay;
+   * ...
+   * public void testGetOverlays() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/plugin-manager/overlays?id=[id]" );
+   *  final List<Overlay> overlays = resource.get( new GenericType<List<Overlay>>() { } );
+   *  for ( Overlay overlay : overlays ) {
+   *    // use the overlay
+   *  }
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
+   * @param id - overlay ID, may be absent
+   * @return list of {@link org.pentaho.platform.web.http.api.resources.Overlay}
    */
   @GET
   @Path( "/overlays" )
@@ -78,8 +130,62 @@ public class PluginManagerResource {
 
   /**
    * Retrieve the list of plugin perspective in the platform
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/plugin-manager/perspectives</b><br/>
+   *  Use GET request type. Only '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}' value is valid
+   *  for "Accept" header.<br/>
+   *  Response content is '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}', is is array of perspectives.<br/>
+   *  You should be logged in to the system in order to use the method. Count of perspectives may vary 
+   *  for different user roles.<br/>
+   * </p>
+   *
+   * <p>Response example:
+   * <pre>
+   *   {@code
+   *
+   * {
+   *  "pluginPerspective": [
+   *    {
+   *      "contentUrl": "mantle/home",
+   *      "id": "home.perspective",
+   *      "layoutPriority": "-2",
+   *      "resourceBundleUri": "content/default-plugin/resources/messages/messages",
+   *      "title": "${home}"
+   *    },
+   *    ...
+   *  ]
+   * }
+   *  }
+   * </pre>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.GenericType;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * import org.pentaho.platform.web.http.api.resources.PluginPerspective;
+   * ...
+   * public void testGetPerspectives() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig() );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/plugin-manager/perspectives" );
+   *  final List<PluginPerspective> perspectives = resource.get( new GenericType<List<PluginPerspective>>() { } );
+   *  for ( PluginPerspective perspective : perspectives ) {
+   *    // use the perspective
+   *  }
+   * }
+   * }
+   * </pre>
+   * </p>
    * 
-   * @return list of <code> PluginPerspective </code>
+   * @return list of {@link org.pentaho.platform.web.http.api.resources.PluginPerspective}
    */
   @GET
   @Path( "/perspectives" )
@@ -116,7 +222,71 @@ public class PluginManagerResource {
 
   /**
    * Retrieve the list of registered plugin IDs
-   * 
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/plugin-manager/ids</b><br/>
+   *  Use GET request type.Only '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}' value is valid
+   *  for "Accept" header.<br/>
+   *  Response content is '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}', is is value of the settingValue.<br/>
+   *  You should be logged in to the system and have
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.RepositoryReadAction#NAME}',
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.RepositoryCreateAction#NAME}' and
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction#NAME}' privileges
+   *  in order to use the method.
+   * </p>
+   *
+   * <p>Response example:
+   * <pre>
+   *   {@code
+   *
+   *   {
+   *      "strings": [
+   *        "pentaho-interactive-reporting",
+   *        "url",
+   *        "data-access",
+   *        "Enterprise Flash Charting",
+   *        "admin-plugin",
+   *        "cgg",
+   *        "xaction",
+   *        "test-plugin-perspective",
+   *        "jpivot",
+   *        "pdi-platform-plugin",
+   *        "pentaho-cdf",
+   *        "BI Server default plugin",
+   *        "analyzer",
+   *        "pentaho-geo",
+   *        "common-ui",
+   *        "reporting",
+   *        "pentaho-mobile"
+   *      ]
+   *    }
+   *  }
+   * </pre>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * import org.pentaho.platform.web.http.api.resources.StringListWrapper;
+   * ...
+   * public void testGetPluginIds() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig(  ) );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/plugin-manager/ids" );
+   *  final StringListWrapper listWrapper = resource.get( StringListWrapper.class );
+   *  for ( String pluginID : listWrapper.getStrings() ) {
+   *    //use pluginID
+   *  }
+   * }
+   * }
+   * </pre>
+   * </p>
    * @return list of ids
    */
   @GET
@@ -134,10 +304,44 @@ public class PluginManagerResource {
 
   /**
    * Retrieve the plugins setting with a provided setting name. This will search the plugins's settings.xml and return
-   * the selected setting
+   * the selected setting. If nothing found, the response will be empty.
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/plugin-manager/[pluginId]/setting/[settingName]</b><br/>
+   *  Use GET request type. Only '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}' value is valid
+   *  for "Accept" header.<br/>
+   *  Response content is '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}', is is value of the settingValue.<br/>
+   *  You should be logged in to the system and have
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.RepositoryReadAction#NAME}',
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.RepositoryCreateAction#NAME}' and
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction#NAME}' privileges
+   *  in order to use the method.<br/>
+   * </p>
+   *
+   * <p>Snippet using Jersey:
+   * <pre>
+   *   {@code
+   *
+   * import com.sun.jersey.api.client.Client;
+   * import com.sun.jersey.api.client.WebResource;
+   * import com.sun.jersey.api.client.config.DefaultClientConfig;
+   * import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   * ...
+   * public void testGetPluginSetting() {
+   *  final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *  Client client = Client.create( new DefaultClientConfig(  ) );
+   *  client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *  final WebResource resource = client.resource( baseUrl + "api/plugin-manager/[pluginId]/setting/[settingName]" );
+   *  final String setting = resource.get( String.class );
+   *  //use the setting
+   * }
+   * }
+   * </pre>
+   * </p>
+   *
    * @param pluginId (Plugin ID for the setting being searched)
    * @param settingName (Setting name of a selected plugin)
-   * @return Value of the setting
+   * @return Value of the setting or empty response
    */
   @GET
   @Path( "/{pluginId}/setting/{settingName}" )
@@ -150,7 +354,37 @@ public class PluginManagerResource {
 
   /**
    * Retrieve the list of setting of a selected setting name from all registered plugins. 
-   * 
+   *
+   * <p>
+   *  Endpoint address is <b>http://[host]:[port]/[webapp]/api/plugin-manager/settings/[settingName]</b><br/>
+   *  Use GET request type. Only '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}' value is valid
+   *  for "Accept" header.<br/>
+   *  Response content is '{@value javax.ws.rs.core.MediaType#APPLICATION_JSON}'.<br/>
+   *  You should be logged in to the system and have
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.RepositoryReadAction#NAME}',
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.RepositoryCreateAction#NAME}' and
+   *  '{@value org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction#NAME}' privileges
+   *  in order to use the method(except '{@value PluginManagerResource#NEW_TOOLBAR_BUTTON_SETTING}' setting).<br/>
+   * </p>
+   *
+   * <pre>
+   *   Response example for '{@value PluginManagerResource#NEW_TOOLBAR_BUTTON_SETTING}' setting:
+   *   {@code {
+   *      "Item": [
+   *        {
+   *          "@type": "setting",
+   *          "name": "pentaho-interactive-reporting",
+   *          "value": "2,newInteractiveReport,interactiveReport,api/repos/pentaho-interactive-reporting/prpti.new"
+   *        },
+   *        {
+   *          "@type": "setting",
+   *          "name": "analyzer",
+   *          "value": "1,newAnalyzer,analyzer,api/repos/xanalyzer/service/selectSchema"
+   *        }
+   *      ]
+   *    }}
+   * </pre>
+   *
    * @param settingName (name of the plugin setting)
    * @return list of <code> Setting </code>
    */
