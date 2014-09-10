@@ -940,20 +940,20 @@ public class JcrRepositoryFileUtils {
       }
       session.save(); // required before checkin since we set some properties above
       // only call checkin() if versioning is enabled
-      if (Boolean.TRUE.equals(versioningEnabled)) {
-            Calendar cal = Calendar.getInstance();
-      if ( versionDate != null ) {
-        cal.setTime( versionDate );
-      } else {
-        cal.setTime( new Date() );
+      if ( Boolean.TRUE.equals( versioningEnabled ) || session.getWorkspace().getVersionManager().getVersionHistory( versionableNode.getPath() ).getAllVersions().getSize() == 1 ) {
+        Calendar cal = Calendar.getInstance();
+        if ( versionDate != null ) {
+          cal.setTime( versionDate );
+        } else {
+          cal.setTime( new Date() );
+        }
+        ( (VersionManagerImpl) session.getWorkspace().getVersionManager() ).checkin( versionableNode.getPath(), cal );
+        // Version newVersion = versionableNode.checkin();
+        // if (versionMessageAndLabel.length > 1 && StringUtils.hasText(versionMessageAndLabel[1])) {
+        // newVersion.getContainingHistory().addVersionLabel(newVersion.getName(), versionMessageAndLabel[1], true);
+        // }
       }
-      ( (VersionManagerImpl) session.getWorkspace().getVersionManager() ).checkin( versionableNode.getPath(), cal );
-      // Version newVersion = versionableNode.checkin();
-      // if (versionMessageAndLabel.length > 1 && StringUtils.hasText(versionMessageAndLabel[1])) {
-      // newVersion.getContainingHistory().addVersionLabel(newVersion.getName(), versionMessageAndLabel[1], true);
-      // }
     }
-  }
   }
 
   private static String getUsername() {
