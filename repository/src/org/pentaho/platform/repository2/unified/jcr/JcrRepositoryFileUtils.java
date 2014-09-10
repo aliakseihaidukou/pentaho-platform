@@ -13,7 +13,7 @@
  * See the GNU General Public License for more details.
  *
  *
- * Copyright 2006 - 2013 Pentaho Corporation.  All rights reserved.
+ * Copyright 2006 - 2014 Pentaho Corporation.  All rights reserved.
  */
 
 package org.pentaho.platform.repository2.unified.jcr;
@@ -53,7 +53,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.core.VersionManagerImpl;
-import org.apache.jackrabbit.util.Text;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.locale.IPentahoLocale;
 import org.pentaho.platform.api.repository2.unified.IRepositoryAccessVoterManager;
@@ -65,7 +64,6 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFileSid;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileTree;
 import org.pentaho.platform.api.repository2.unified.RepositoryRequest;
 import org.pentaho.platform.api.repository2.unified.VersionSummary;
-import org.pentaho.platform.api.repository2.unified.data.node.DataNode;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.repository2.locale.PentahoLocale;
@@ -113,19 +111,19 @@ public class JcrRepositoryFileUtils {
       reservedChars = newOverrideReservedChars;
     }
 
-      Boolean systemVersioningEnabled = PentahoSystem.get(Boolean.class,
-              "versioningEnabled", PentahoSessionHolder.getSession());
+    Boolean systemVersioningEnabled = PentahoSystem.get( Boolean.class,
+              "versioningEnabled", PentahoSessionHolder.getSession() );
 
-      if (systemVersioningEnabled != null) {
-          versioningEnabled = systemVersioningEnabled;
-  }
+    if ( systemVersioningEnabled != null ) {
+      versioningEnabled = systemVersioningEnabled;
+    }
 
-      Boolean systemVersionCommentsEnabled = PentahoSystem.get(Boolean.class,
-          "versionCommentsEnabled", PentahoSessionHolder.getSession());
+    Boolean systemVersionCommentsEnabled = PentahoSystem.get( Boolean.class,
+          "versionCommentsEnabled", PentahoSessionHolder.getSession() );
 
-      if (systemVersionCommentsEnabled != null) {
-        versionCommentsEnabled = systemVersionCommentsEnabled;
-      }
+    if ( systemVersionCommentsEnabled != null ) {
+      versionCommentsEnabled = systemVersionCommentsEnabled;
+    }
   }
 
   private static Pattern makePattern( List<Character> list ) {
@@ -627,10 +625,9 @@ public class JcrRepositoryFileUtils {
     }
   }
 
-  public static Node
-    updateFileNode( final Session session, final PentahoJcrConstants pentahoJcrConstants, final RepositoryFile file,
-        final IRepositoryFileData content, final ITransformer<IRepositoryFileData> transformer )
-      throws RepositoryException {
+  public static Node updateFileNode( final Session session, final PentahoJcrConstants pentahoJcrConstants,
+                                     final RepositoryFile file, final IRepositoryFileData content,
+                                     final ITransformer<IRepositoryFileData> transformer ) throws RepositoryException {
 
     Node fileNode = session.getNodeByIdentifier( file.getId().toString() );
     // guard against using a file retrieved from a more lenient session inside a more strict session
@@ -1033,7 +1030,7 @@ public class JcrRepositoryFileUtils {
     Node nodeAtVersion = getNodeAtVersion( pentahoJcrConstants, version );
     String author = "BASE_VERSION";
     if ( nodeAtVersion.hasProperty( pentahoJcrConstants.getPHO_VERSIONAUTHOR() ) ) {
-      author = nodeAtVersion.getProperty(pentahoJcrConstants.getPHO_VERSIONAUTHOR()).getString();
+      author = nodeAtVersion.getProperty( pentahoJcrConstants.getPHO_VERSIONAUTHOR() ).getString();
     }
     String message = null;
     if ( nodeAtVersion.hasProperty( pentahoJcrConstants.getPHO_VERSIONMESSAGE() ) ) {
@@ -1118,7 +1115,7 @@ public class JcrRepositoryFileUtils {
    * Send versioning enabled flag
    * @return
    */
-  public static boolean getVersioningEnabled(){
+  public static boolean getVersioningEnabled() {
     return versioningEnabled;
   }
 
@@ -1126,7 +1123,7 @@ public class JcrRepositoryFileUtils {
    * Send version comments enabled flag
    * @return
    */
-  public static boolean getVersionCommentsEnabled(){
+  public static boolean getVersionCommentsEnabled() {
     return versionCommentsEnabled;
   }
 
