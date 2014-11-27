@@ -49,15 +49,23 @@ import org.pentaho.platform.plugin.services.importexport.StreamConverter;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 
+import static org.pentaho.platform.api.repository2.unified.RepositoryFile.SEPARATOR;
+
 public class MondrianCatalogRepositoryHelper {
 
+  public static final String MONDRIAN = "mondrian";
+
   public static final String ETC_MONDRIAN_JCR_FOLDER =
-      ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + "mondrian";
+      ClientRepositoryPaths.getEtcFolderPath() + SEPARATOR + MONDRIAN;
   public static final String ETC_OLAP_SERVERS_JCR_FOLDER =
-      ClientRepositoryPaths.getEtcFolderPath() + RepositoryFile.SEPARATOR + "olap-servers";
+      ClientRepositoryPaths.getEtcFolderPath() + SEPARATOR + "olap-servers";
+
+  public static final String ETC_SHADOWED_FOLDER = ClientRepositoryPaths.getEtcFolderPath() + SEPARATOR + "shadowed" ;
+  public static final String ETC_SHADOWED_MONDRIAN_FOLDER = ETC_SHADOWED_FOLDER + SEPARATOR + MONDRIAN ;
+
   private boolean isSecured = false;
 
-  private IUnifiedRepository repository;
+  private final IUnifiedRepository repository;
 
   public MondrianCatalogRepositoryHelper( final IUnifiedRepository repository ) {
     if ( repository == null ) {
@@ -80,8 +88,30 @@ public class MondrianCatalogRepositoryHelper {
     this.addHostedCatalog( mondrianFile, catalogName, datasourceInfo );
   }
 
+  // todo Khayrutdinov : concurrency ?
+  private RepositoryFile ensureShadowedMondrianFolderExists() {
+    RepositoryFile shadowedFolder = repository.getFile( ETC_SHADOWED_FOLDER );
+    if ( shadowedFolder == null ) {
+      shadowedFolder = repository.createFolder(
+        repository.getFile( ClientRepositoryPaths.getEtcFolderPath() ).getId(),
+        new RepositoryFile.Builder( "shadowed" ).folder( true ).build(), "" );
+    }
+
+    RepositoryFile shadowedMondrianFolder = repository.getFile( ETC_SHADOWED_MONDRIAN_FOLDER );
+    if (shadowedMondrianFolder == null) {
+      shadowedMondrianFolder = repository.createFolder( shadowedFolder.getId(), new RepositoryFile.Builder( MONDRIAN ).folder( true ).build(), "" );
+    }
+
+    return shadowedMondrianFolder;
+  }
+
   public void addHostedCatalog( InputStream mondrianFile, String catalogName, String datasourceInfo ) throws Exception {
     RepositoryFile catalog = createCatalog( catalogName, datasourceInfo );
+    // todo Khayrutdinov : proper prefix
+    RepositoryFile shadowedMondrianFolder = ensureShadowedMondrianFolderExists();
+    RepositoryFile shadowedCatalog = repository
+      .createFolder( shadowedMondrianFolder.getId(), new RepositoryFile.Builder( catalogName ).folder( true ).build(),
+        "" );
 
     File tempFile = File.createTempFile( "tempFile", null );
     tempFile.deleteOnExit();
@@ -91,19 +121,22 @@ public class MondrianCatalogRepositoryHelper {
     RepositoryFile repoFile = new RepositoryFile.Builder( "schema.xml" ).build();
     org.pentaho.platform.plugin.services.importexport.RepositoryFileBundle repoFileBundle =
         new org.pentaho.platform.plugin.services.importexport.RepositoryFileBundle( repoFile, null,
-            ETC_MONDRIAN_JCR_FOLDER + RepositoryFile.SEPARATOR + catalogName + RepositoryFile.SEPARATOR, tempFile,
+            ETC_MONDRIAN_JCR_FOLDER + SEPARATOR + catalogName + SEPARATOR, tempFile,
             "UTF-8", "text/xml" );
 
     RepositoryFile schema =
-        repository.getFile( ETC_MONDRIAN_JCR_FOLDER + RepositoryFile.SEPARATOR + catalogName + RepositoryFile.SEPARATOR
+        repository.getFile( ETC_MONDRIAN_JCR_FOLDER + SEPARATOR + catalogName + SEPARATOR
             + "schema.xml" );
     IRepositoryFileData data =
         new StreamConverter().convert(
             repoFileBundle.getInputStream(), repoFileBundle.getCharset(), repoFileBundle.getMimeType() );
     if ( schema == null ) {
       repository.createFile( catalog.getId(), repoFileBundle.getFile(), data, null );
+      repository.createFile( shadowedCatalog.getId(), new RepositoryFile.Builder( repoFile.getName() ).build(),
+        new NodeRepositoryFileData( new DataNode( "acl" ) ), null );
     } else {
       repository.updateFile( schema, data, null );
+      // todo Khayrutdinov : update Acl if needed
     }
   }
 
@@ -113,19 +146,18 @@ public class MondrianCatalogRepositoryHelper {
   }
 
   public void deleteHostedCatalog( String catalogName ) {
+    deleteCatalogFromJcr( ETC_MONDRIAN_JCR_FOLDER + SEPARATOR + catalogName );
+    deleteCatalogFromJcr( ETC_SHADOWED_MONDRIAN_FOLDER + SEPARATOR + catalogName );
+  }
 
-    final RepositoryFile catalogNode =
-        repository.getFile(
-            ETC_MONDRIAN_JCR_FOLDER
-                + RepositoryFile.SEPARATOR
-                + catalogName
-      );
+  private void deleteCatalogFromJcr( String catalogName ) {
+    RepositoryFile catalogNode = repository.getFile( catalogName );
 
     if ( catalogNode != null ) {
       repository.deleteFile(
-          catalogNode, true,
-          "Deleting hosted catalog: "
-              + catalogName
+        catalogNode, true,
+        "Deleting hosted catalog: "
+          + catalogName
       );
     }
   }
@@ -137,7 +169,7 @@ public class MondrianCatalogRepositoryHelper {
       final Callable<Void> callable = new Callable<Void>() {
         public Void call() throws Exception {
           repository.createFolder(
-              repository.getFile( RepositoryFile.SEPARATOR + "etc" ).getId(),
+              repository.getFile( SEPARATOR + "etc" ).getId(),
               new RepositoryFile.Builder( "olap-servers" )
                   .folder( true )
                   .build(),
@@ -174,7 +206,7 @@ public class MondrianCatalogRepositoryHelper {
     RepositoryFile entry =
         repository.getFile(
             ETC_OLAP_SERVERS_JCR_FOLDER
-                + RepositoryFile.SEPARATOR
+                + SEPARATOR
                 + name
       );
 
@@ -194,9 +226,9 @@ public class MondrianCatalogRepositoryHelper {
 
     final String path =
         ETC_OLAP_SERVERS_JCR_FOLDER
-            + RepositoryFile.SEPARATOR
+            + SEPARATOR
             + name
-            + RepositoryFile.SEPARATOR
+            + SEPARATOR
             + "metadata";
 
     // Convert the properties to a serializable XML format.
@@ -254,7 +286,7 @@ public class MondrianCatalogRepositoryHelper {
     final RepositoryFile serverNode =
         repository.getFile(
             ETC_OLAP_SERVERS_JCR_FOLDER
-                + RepositoryFile.SEPARATOR
+                + SEPARATOR
                 + name
       );
 
@@ -294,9 +326,9 @@ public class MondrianCatalogRepositoryHelper {
     final RepositoryFile serverNode =
         repository.getFile(
             ETC_OLAP_SERVERS_JCR_FOLDER
-                + RepositoryFile.SEPARATOR
+                + SEPARATOR
                 + name
-                + RepositoryFile.SEPARATOR
+                + SEPARATOR
                 + "metadata"
       );
 
@@ -328,9 +360,9 @@ public class MondrianCatalogRepositoryHelper {
     final RepositoryFile catalogNode =
         repository.getFile(
             ETC_MONDRIAN_JCR_FOLDER
-                + RepositoryFile.SEPARATOR
+                + SEPARATOR
                 + name
-                + RepositoryFile.SEPARATOR
+                + SEPARATOR
                 + "metadata"
       );
 
@@ -418,7 +450,7 @@ public class MondrianCatalogRepositoryHelper {
     Map<String, InputStream> values = new HashMap<String, InputStream>();
 
     RepositoryFile catalogFolder =
-        repository.getFile( ETC_MONDRIAN_JCR_FOLDER + RepositoryFile.SEPARATOR + catalogName );
+        repository.getFile( ETC_MONDRIAN_JCR_FOLDER + SEPARATOR + catalogName );
 
     for ( RepositoryFile repoFile : repository.getChildren( catalogFolder.getId() ) ) {
       RepositoryFileInputStream is;
@@ -446,7 +478,7 @@ public class MondrianCatalogRepositoryHelper {
      */
 
     RepositoryFile etcMondrian = repository.getFile( ETC_MONDRIAN_JCR_FOLDER );
-    RepositoryFile catalog = repository.getFile( ETC_MONDRIAN_JCR_FOLDER + RepositoryFile.SEPARATOR + catalogName );
+    RepositoryFile catalog = repository.getFile( ETC_MONDRIAN_JCR_FOLDER + SEPARATOR + catalogName );
     if ( catalog == null ) {
       catalog =
           repository.createFolder( etcMondrian.getId(), new RepositoryFile.Builder( catalogName ).folder( true )
@@ -462,7 +494,7 @@ public class MondrianCatalogRepositoryHelper {
   private void createDatasourceMetadata( RepositoryFile catalog, String datasourceInfo ) {
 
     final String path =
-        ETC_MONDRIAN_JCR_FOLDER + RepositoryFile.SEPARATOR + catalog.getName() + RepositoryFile.SEPARATOR + "metadata";
+        ETC_MONDRIAN_JCR_FOLDER + SEPARATOR + catalog.getName() + SEPARATOR + "metadata";
     RepositoryFile metadata = repository.getFile( path );
 
     String definition = "mondrian:/" + catalog.getName();
@@ -481,14 +513,14 @@ public class MondrianCatalogRepositoryHelper {
   private String makeHostedPath( String name ) {
     return
         MondrianCatalogRepositoryHelper.ETC_MONDRIAN_JCR_FOLDER
-            + RepositoryFile.SEPARATOR
+            + SEPARATOR
             + name;
   }
 
   private String makeGenericPath( String name ) {
     return
         MondrianCatalogRepositoryHelper.ETC_OLAP_SERVERS_JCR_FOLDER
-            + RepositoryFile.SEPARATOR
+            + SEPARATOR
             + name;
   }
 
