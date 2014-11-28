@@ -64,9 +64,14 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.services.solution.PentahoEntityResolver;
 import org.pentaho.platform.plugin.action.messages.Messages;
 import org.pentaho.platform.plugin.action.mondrian.catalog.MondrianCatalogServiceException.Reason;
+import org.pentaho.platform.plugin.services.importexport.legacy.MondrianCatalogRepositoryHelper;
 import org.pentaho.platform.repository.solution.filebased.MondrianVfs;
 import org.pentaho.platform.repository.solution.filebased.SolutionRepositoryVfsFileObject;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
+import org.pentaho.platform.repository2.unified.IRepositoryFileAclDao;
+import org.pentaho.platform.repository2.unified.jcr.IShadowNodeHelper;
+import org.pentaho.platform.repository2.unified.jcr.IShadowNodeHelperProvider;
+import org.pentaho.platform.repository2.unified.jcr.ShadowNodeHelperProviderImpl;
 import org.pentaho.platform.util.logging.Logger;
 import org.pentaho.platform.util.messages.LocaleHelper;
 import org.pentaho.platform.util.xml.dom4j.XmlDom4JHelper;
@@ -88,6 +93,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -129,6 +135,9 @@ public class MondrianCatalogHelper implements IMondrianCatalogService {
    */
   private final boolean useLegacyDbName;
 
+  private final IShadowNodeHelperProvider shadowNodeHelperProvider;
+  private final IShadowNodeHelper shadowNodeHelper;
+
   public static final String MONDRIAN_DATASOURCE_FOLDER = "mondrian"; //$NON-NLS-1$
 
   // ~ Constructors ====================================================================================================
@@ -140,12 +149,16 @@ public class MondrianCatalogHelper implements IMondrianCatalogService {
         (Map<String, MondrianCatalog>) PentahoSystem.getCacheManager( pentahoSession ).getFromRegionCache(
             MONDRIAN_CATALOG_CACHE_REGION, getLocale().toString() );
 
-    List<MondrianCatalog> catalogs = new ArrayList<MondrianCatalog>();
     // Analyzer cache is also placed in the MONDRIAN_CATALOG_CACHE_REGION
     // so we need to filter the list to only keep MondrianCatalog objects
-    for ( Object o : catalogsMap.values() ) {
+    Collection<MondrianCatalog> values = catalogsMap.values();
+    List<MondrianCatalog> catalogs = new ArrayList<MondrianCatalog>(values.size());
+    for ( Object o : values ) {
       if ( o instanceof MondrianCatalog ) {
-        catalogs.add( (MondrianCatalog) o );
+        MondrianCatalog catalog = (MondrianCatalog) o;
+        if ( shadowNodeHelper.isVisibleFor( catalog.getName(), pentahoSession.getName() )) {
+          catalogs.add( catalog );
+        }
       }
     }
     // Sort
@@ -223,6 +236,9 @@ public class MondrianCatalogHelper implements IMondrianCatalogService {
   public MondrianCatalogHelper( boolean useLegacyDbName ) {
     super();
     this.useLegacyDbName = useLegacyDbName;
+    this.shadowNodeHelperProvider = new ShadowNodeHelperProviderImpl( PentahoSystem.get( IUnifiedRepository.class ), PentahoSystem.get(
+      IRepositoryFileAclDao.class ) );
+    this.shadowNodeHelper = shadowNodeHelperProvider.createHelperFor( MondrianCatalogRepositoryHelper.MONDRIAN );
 
     try {
       DefaultFileSystemManager dfsm = (DefaultFileSystemManager) VFS.getManager();
@@ -584,13 +600,7 @@ public class MondrianCatalogHelper implements IMondrianCatalogService {
 
     // Checks if a catalog of the same name but with a different file
     // path exists.
-    MondrianCatalog fileLocationCatalogTest = null;
-    for ( MondrianCatalog currentCatalogCheck : getCatalogs( pentahoSession ) ) {
-      if ( currentCatalogCheck.getName().equals( catalog.getName() ) ) {
-        fileLocationCatalogTest = currentCatalogCheck;
-        break;
-      }
-    }
+    MondrianCatalog fileLocationCatalogTest = lookForSameName( catalog, pentahoSession );
     //compare the catalog names and throw exception if same and NOT ovewrite
     if ( fileLocationCatalogTest != null
         && definitionEquals( fileLocationCatalogTest.getDefinition(),
@@ -613,9 +623,8 @@ public class MondrianCatalogHelper implements IMondrianCatalogService {
           Reason.valueOf( ex.getMessage() ) );
     }
     try {
-      org.pentaho.platform.plugin.services.importexport.legacy.MondrianCatalogRepositoryHelper helper =
-          new org.pentaho.platform.plugin.services.importexport.legacy.MondrianCatalogRepositoryHelper( PentahoSystem
-              .get( IUnifiedRepository.class ) );
+      MondrianCatalogRepositoryHelper helper = new MondrianCatalogRepositoryHelper( PentahoSystem.get(
+        IUnifiedRepository.class ) );
       helper.addSchema( schemaInputStream, catalog.getName(), catalog.getDataSourceInfo() );
     } catch ( Exception e ) {
       throw new MondrianCatalogServiceException( Messages.getInstance().getErrorString(
@@ -628,6 +637,15 @@ public class MondrianCatalogHelper implements IMondrianCatalogService {
           .debug( "refreshing from dataSourcesConfig (" + dataSourcesConfig + ")" ); //$NON-NLS-1$ //$NON-NLS-2$
     }
     reInit( pentahoSession );
+  }
+
+  private MondrianCatalog lookForSameName( MondrianCatalog catalog, IPentahoSession pentahoSession ) {
+    for ( MondrianCatalog currentCatalogCheck : getCatalogs( pentahoSession ) ) {
+      if ( currentCatalogCheck.getName().equals( catalog.getName() ) ) {
+        return currentCatalogCheck;
+      }
+    }
+    return null;
   }
 
   public void importSchema( File mondrianFile, String databaseConnection, String parameters ) {
@@ -656,8 +674,8 @@ public class MondrianCatalogHelper implements IMondrianCatalogService {
       parsingInputStream.close();
 
       FileInputStream schemaInputStream = new FileInputStream( mondrianFile );
-      org.pentaho.platform.plugin.services.importexport.legacy.MondrianCatalogRepositoryHelper helper =
-          new org.pentaho.platform.plugin.services.importexport.legacy.MondrianCatalogRepositoryHelper( PentahoSystem
+      MondrianCatalogRepositoryHelper helper =
+          new MondrianCatalogRepositoryHelper( PentahoSystem
               .get( IUnifiedRepository.class ) );
       helper.addSchema( schemaInputStream, catalogName, datasourceInfo );
 
@@ -760,11 +778,6 @@ public class MondrianCatalogHelper implements IMondrianCatalogService {
     }
 
     for ( DataSourcesConfig.DataSource dataSource : dataSources.dataSources ) {
-      List<String> catalogNames = new ArrayList<String>();
-      for ( DataSourcesConfig.Catalog catalog : dataSource.catalogs.catalogs ) {
-        catalogNames.add( catalog.name );
-      }
-
       Map<String, MondrianCatalog> catalogs =
           (Map<String, MondrianCatalog>) cacheMgr.getFromRegionCache( MONDRIAN_CATALOG_CACHE_REGION, getLocale()
               .toString() );

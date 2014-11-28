@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -43,6 +44,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.IUserRoleListService;
 import org.pentaho.platform.api.engine.security.userroledao.IPentahoRole;
 import org.pentaho.platform.api.engine.security.userroledao.IPentahoUser;
 import org.pentaho.platform.api.engine.security.userroledao.IUserRoleDao;
@@ -153,6 +155,7 @@ public class DefaultUnifiedRepositoryBase implements ApplicationContextAware {
   protected ITenantManager tenantManager;
 
   protected IUnifiedRepository repo;
+  protected IRepositoryFileAclDao repositoryFileAclDao;
 
   protected String repositoryAdminUsername;
 
@@ -228,6 +231,8 @@ public class DefaultUnifiedRepositoryBase implements ApplicationContextAware {
     mp.defineInstance( "ITenantedPrincipleNameResolver", new DefaultTenantedPrincipleNameResolver() );
     mp.defineInstance("useMultiByteEncoding", new Boolean( false ) );
     mp.defineInstance( IUnifiedRepository.class, repo );
+    mp.defineInstance( IRepositoryFileAclDao.class, repositoryFileAclDao );
+    mp.define( IUserRoleListService.class, StubUserRoleListService.class );
     // Start the micro-platform
     mp.start();
     loginAsRepositoryAdmin();
@@ -267,6 +272,7 @@ public class DefaultUnifiedRepositoryBase implements ApplicationContextAware {
     testJcrTemplate = null;
     tenantManager = null;
     repo = null;
+    repositoryFileAclDao = null;
     defaultBackingRepositoryLifecycleManager = null;
     roleBindingDaoTarget = null;
     repositoryFileDao = null;
@@ -548,6 +554,7 @@ public class DefaultUnifiedRepositoryBase implements ApplicationContextAware {
         .getBean( "roleAuthorizationPolicyRoleBindingDaoTarget" );
     authorizationPolicy = (IAuthorizationPolicy) applicationContext.getBean( "authorizationPolicy" );
     repo = (IUnifiedRepository) applicationContext.getBean( "unifiedRepository" );
+    repositoryFileAclDao = (IRepositoryFileAclDao) applicationContext.getBean( "repositoryFileAclDao" );
     userRoleDao = (IUserRoleDao) applicationContext.getBean( "userRoleDao" );
     jcrTransactionTemplate = (TransactionTemplate) applicationContext.getBean( "jcrTransactionTemplate" );
     defaultBackingRepositoryLifecycleManager =
@@ -564,4 +571,59 @@ public class DefaultUnifiedRepositoryBase implements ApplicationContextAware {
   protected String getSolutionPath() {
     return null;
   }
+}
+
+class StubUserRoleListService implements IUserRoleListService {
+
+  public List getAllRoles() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public List getAllUsers() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public List getUsersInRole( String role ) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  public List getRolesForUser( String userName ) {
+    return Arrays.asList( "FL_GATOR", "FS_SEMINOLE" );
+  }
+
+  @Override
+  public List<String> getAllRoles( ITenant tenant ) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<String> getAllUsers( ITenant tenant ) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<String> getUsersInRole( ITenant tenant, String role ) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public List<String> getRolesForUser( ITenant tenant, String username ) {
+    List roles = new ArrayList<String>();
+    roles.add( "Admin" );
+    roles.add( "Authenticated" );
+    return roles;
+  }
+
+  @Override
+  public List<String> getSystemRoles() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 }
