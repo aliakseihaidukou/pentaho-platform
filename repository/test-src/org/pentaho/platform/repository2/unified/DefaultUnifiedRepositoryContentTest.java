@@ -361,7 +361,7 @@ public class DefaultUnifiedRepositoryContentTest extends DefaultUnifiedRepositor
     login( USERNAME_SUZY, tenantAcme, new String[] { tenantAuthenticatedRoleName } );
 
     RepositoryFile parentFolder = repo.getFile( ClientRepositoryPaths.getUserHomeFolderPath( USERNAME_SUZY ) );
-    RepositoryFile newFolder = new RepositoryFile.Builder( "test" ).folder( true ).hidden( true ).build();
+    RepositoryFile newFolder = new RepositoryFile.Builder( "test" ).folder( true ).hidden( true ).shadow( true ).build();
 
     Date beginTime = Calendar.getInstance().getTime();
 
@@ -376,6 +376,7 @@ public class DefaultUnifiedRepositoryContentTest extends DefaultUnifiedRepositor
     assertNotNull( newFolder );
     assertNotNull( newFolder.getId() );
     assertTrue( newFolder.isHidden() );
+    assertTrue( newFolder.isShadow() );
     assertNotNull( SimpleJcrTestUtils.getItem( testJcrTemplate, ServerRepositoryPaths.getUserHomeFolderPath(
         tenantAcme, USERNAME_SUZY )
         + "/test" ) );

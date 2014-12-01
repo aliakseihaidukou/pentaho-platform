@@ -54,6 +54,7 @@ public class HierarchyNodeNtdProvider implements NodeTypeDefinitionProvider {
     t.getNodeDefinitionTemplates().add( getMetadataNode( ntMgr ) );
     t.getNodeDefinitionTemplates().add( getLocaleNode( ntMgr ) );
     t.getPropertyDefinitionTemplates().add( getHiddenProperty( ntMgr, vFac ) );
+    t.getPropertyDefinitionTemplates().add( getShadowProperty( ntMgr, vFac ) );
     return t;
   }
 
@@ -101,6 +102,17 @@ public class HierarchyNodeNtdProvider implements NodeTypeDefinitionProvider {
     t.setRequiredPrimaryTypeNames( new String[] { PHO_NT + "locale" } ); //$NON-NLS-1$
     t.setOnParentVersion( OnParentVersionAction.COPY );
     t.setSameNameSiblings( false );
+    return t;
+  }
+
+  private PropertyDefinitionTemplate getShadowProperty( final NodeTypeManager ntMgr, final ValueFactory vFac )
+    throws RepositoryException {
+    PropertyDefinitionTemplate t = ntMgr.createPropertyDefinitionTemplate();
+    t.setName( PHO + "shadow" ); //$NON-NLS-1$
+    t.setRequiredType( PropertyType.BOOLEAN );
+    t.setDefaultValues( new Value[]{ vFac.createValue( false ) } );
+    t.setOnParentVersion( OnParentVersionAction.COPY );
+    t.setMultiple( false );
     return t;
   }
 }

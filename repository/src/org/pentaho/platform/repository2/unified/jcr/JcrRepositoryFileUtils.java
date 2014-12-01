@@ -582,6 +582,7 @@ public class JcrRepositoryFileUtils {
     String encodedfolderName = JcrStringHelper.fileNameEncode( folder.getName() );
     Node folderNode = parentFolderNode.addNode( encodedfolderName, pentahoJcrConstants.getPHO_NT_PENTAHOFOLDER() );
     folderNode.setProperty( pentahoJcrConstants.getPHO_HIDDEN(), folder.isHidden() );
+    folderNode.setProperty( pentahoJcrConstants.getPHO_SHADOW(), folder.isShadow() );
     // folderNode.setProperty(pentahoJcrConstants.getPHO_TITLE(), folder.getTitle());
     Node localeNodes = null;
     if ( folder.getTitle() != folder.getName() ) { // Title is different from the name

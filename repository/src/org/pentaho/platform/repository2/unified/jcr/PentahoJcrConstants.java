@@ -91,6 +91,8 @@ public class PentahoJcrConstants extends JcrConstants {
 
   private static final String PHO_HIDDEN = "hidden"; //$NON-NLS-1$
 
+  private static final String PHO_SHADOW = "shadow"; //$NON-NLS-1$
+
   private static String PHO_DELETEDDATE = "deletedDate"; //$NON-NLS-1$
 
   private static String PHO_FILESIZE = "fileSize"; //$NON-NLS-1$
@@ -203,6 +205,10 @@ public class PentahoJcrConstants extends JcrConstants {
 
   public String getPHO_HIDDEN() {
     return resolveName( PHO_NS, PHO_HIDDEN );
+  }
+
+  public String getPHO_SHADOW() {
+    return resolveName( PHO_NS, PHO_SHADOW );
   }
 
   public String getPHO_DELETEDDATE() {
