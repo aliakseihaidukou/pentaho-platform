@@ -18,6 +18,7 @@
 package org.pentaho.platform.web.http.context;
 
 import org.pentaho.platform.web.http.PentahoHttpSessionHelper;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.web.context.support.XmlWebApplicationContext;
@@ -44,4 +45,11 @@ public class PentahoSolutionSpringApplicationContext extends XmlWebApplicationCo
     return resource;
   }
 
+  @Override
+  protected void prepareBeanFactory( ConfigurableListableBeanFactory beanFactory ) {
+    super.prepareBeanFactory( beanFactory );
+    if ( beanFactory.containsBeanDefinition( "jcrRepository" ) ) {
+      beanFactory.getBeanDefinition( "jcrRepository" ).setBeanClassName( ProxyRepositoryFactoryBean.class.getName() );
+    }
+  }
 }
